@@ -19,11 +19,15 @@ Player.new = function(x, y)
   obj.cr = {x=2, y=2, w=5, h=5}  -- collision rectangle
   obj.jump = 0
   -- obj.jump_seq={-3, -3, -3, -3, -2, -2, -2, 1, 1, 0, 0, 0, 0, 0}
-  obj.jump_seq={-4, -4, -4, -4,
-                -3, -3, -3, -3,
+  obj.jump_seq={-4, -4, -4, -4, 
+                -3, -3, -3, 
                 -2, -2, -2,
                 1, 1, 0, 0, 0, 0, 0}
+  obj.coyote = 0  -- remaining Coyote time count
+
   obj.dir = 0  -- 0=left, 1=right
+  obj.grounded = false
+  obj.grounded_recent = false
 
   obj.anim = 1
   obj.anim_seq = { 257, 257, 257, 257, 258, 258, 258, 258 }
@@ -76,16 +80,24 @@ end
 
 function UpdatePlayer()
   -- is player grounded?
+  plr.grounded_recent = plr.grounded
   if CanMove(plr.x, plr.y + 1, plr.cr) then
     plr.grounded = false
   else
     plr.grounded = true
   end
 
+  -- falling
   if not plr.grounded then
+    plr.coyote = plr.coyote - 1
     plr.y = plr.y + 1
+    -- when first frame of falling, get Coyote time
+    if plr.grounded_recent then
+      plr.coyote = 3
+    end
   end
 
+  -- jump sequence
   if plr.jump > 0 then
     if CanMove(plr.x, plr.y + plr.jump_seq[plr.jump], plr.cr) then
       plr.y = plr.y + plr.jump_seq[plr.jump]
@@ -108,15 +120,16 @@ function UpdatePlayer()
     plr.dir = DIR_RIGHT
     plr.anim = plr.anim + 1
   end
-  if btn(4) and plr.grounded then
+  if btnp(4) and plr.grounded then
+  -- if btn(4) and ( plr.grounded or plr.coyote >= 1 ) then
     plr.jump = 1
+    sfx(0)
   end
 
   -- Animation
   if plr.anim >= #plr.anim_seq then
     plr.anim = 1
   end
-
 end
 
 
@@ -139,5 +152,6 @@ function TIC()
   plr.draw()
 
   -- debug
-  print(tostring(plr.jump_seq[plr.jump]))
+  print(tostring(plr.jump_seq[plr.jump]), 8, 8)
+  print(tostring(plr.coyote), 8, 16)
 end
